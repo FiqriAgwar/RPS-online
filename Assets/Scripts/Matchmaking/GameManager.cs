@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Threading.Tasks;
 
 public class GameManager : MonoBehaviourPun
 {
@@ -185,7 +186,7 @@ public class GameManager : MonoBehaviourPun
     }
 
     [PunRPC]
-    public void UpdateInfo(string playerChoice, string enemyChoice)
+    public async void UpdateInfo(string playerChoice, string enemyChoice)
     {
         PlayerPointText.text = Player1Point.ToString();
         EnemyPointText.text = Player2Point.ToString();
@@ -196,6 +197,7 @@ public class GameManager : MonoBehaviourPun
         if(Player1Point >= 3 || Player2Point >= 3)
         {
             RoundText.text = "Finished";
+            await SaveToDatabase();
             StartCoroutine(DelayBeforeFinish());
         }
         else
@@ -203,6 +205,11 @@ public class GameManager : MonoBehaviourPun
             RoundText.text = "Rounds: " + Rounds.ToString();
             StartCoroutine(RpcRoundStart());
         }
+    }
+
+    public async Task SaveToDatabase()
+    {
+        await database.WriteScoreToDatabase(Player1Name.text, Player2Name.text, Player1Point, Player2Point, histories);
     }
 
     IEnumerator RpcRoundStart()
@@ -289,12 +296,7 @@ public class GameManager : MonoBehaviourPun
 
     [PunRPC]
     public void GameFinished()
-    {
-        if (PhotonNetwork.IsMasterClient)
-        {
-            database.WriteScoreToDatabase(Player1Name.text, Player2Name.text, Player1Point, Player2Point, histories);
-        }
-        
+    {        
         GameOverText.text = Player1Point == Player2Point ? "Game Draw" : Player1Point > Player2Point ? Player1Name.text + " wins the game" : Player2Name.text + " wins the game";
         GameOverPanel.SetActive(true);
     }

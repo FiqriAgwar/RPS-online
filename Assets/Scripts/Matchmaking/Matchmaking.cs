@@ -26,6 +26,13 @@ public class Matchmaking : MonoBehaviourPunCallbacks
         PlayPanel.gameObject.SetActive(false);
         LeavePanel.gameObject.SetActive(false);
         gameStarting.gameObject.SetActive(false);
+
+        if (PhotonNetwork.IsConnected)
+        {
+            SetPanel(PlayPanel);
+            loadingText.gameObject.SetActive(false);
+            gameStarting.gameObject.SetActive(false);
+        }
     }
 
     public override void OnConnectedToMaster()

@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using UnityEngine;
 using MongoDB.Driver;
@@ -8,7 +10,7 @@ using MongoDB.Bson;
 
 public class MatchDatabase : MonoBehaviour
 {
-    MongoClient client = new MongoClient("mongodb+srv://orpheus_roleDB:uJPKdHo5Kn0S8fds@rps-online.eckyjkp.mongodb.net/?retryWrites=true&w=majority");
+    MongoClient client = new MongoClient("mongodb+srv://orpheus_roleDB:uJPKdHo5Kn0S8fds@rps-online.eckyjkp.mongodb.net/?retryWrites=true&w=majority&connect=replicaSet");
     IMongoDatabase database;
     IMongoCollection<BsonDocument> collection;
 
@@ -17,12 +19,16 @@ public class MatchDatabase : MonoBehaviour
     {
         database = client.GetDatabase("RpsMatch");
         collection = database.GetCollection<BsonDocument>("MatchResult");
+
+        Debug.Log("Database: " + database);
+        Debug.Log("Collection: " + collection);
     }
 
-    public async void WriteScoreToDatabase(string Player1Name, string Player2Name, float Player1Score, float Player2Score, List<RoundHistory> RoundHistories)
+    public async Task WriteScoreToDatabase(string Player1Name, string Player2Name, float Player1Score, float Player2Score, List<RoundHistory> RoundHistories)
     {
+        var matchID = Guid.NewGuid().ToString();
         var document = new BsonDocument { 
-            { "matchID", Guid.NewGuid().ToString() } ,
+            { "matchID", matchID } ,
             { "name1", Player1Name },
             { "name2", Player2Name },
             { "score1", Player1Score },
@@ -30,7 +36,13 @@ public class MatchDatabase : MonoBehaviour
             { "histories",  SetUpHistories(RoundHistories) }
         };
 
-        Debug.Log(document);
+        string FullFilePath = Application.persistentDataPath + "/" + matchID + ".bson";
+        BinaryFormatter Formatter = new BinaryFormatter();
+        FileStream fileStream = new FileStream(FullFilePath, FileMode.Create);
+        Formatter.Serialize(fileStream, document);
+        fileStream.Close();
+
+        Debug.Log(FullFilePath);
 
         await collection.InsertOneAsync(document);
     }

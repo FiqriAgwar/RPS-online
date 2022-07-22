@@ -11,8 +11,14 @@ public class ConnectToServer : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
-        instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (instance != null && instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            instance = this;
+        }
     }
 
     private void Start()
